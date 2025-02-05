@@ -66,6 +66,11 @@ func postTask(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	_, ok := tasks[task.ID]
+	if ok {
+		http.Error(w, "Задача с данным ID уже существует", http.StatusConflict)
+		return
+	}
 	tasks[task.ID] = task
 
 	w.Header().Set("Content-Type", "application/json")
@@ -75,12 +80,12 @@ func getTaskId(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	task, ok := tasks[id]
 	if !ok {
-		http.Error(w, "ID не найдено", http.StatusNotFound)
+		http.Error(w, "ID не найдено", http.StatusBadRequest)
 		return
 	}
 	taskid, err := json.Marshal(task)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -89,20 +94,14 @@ func getTaskId(w http.ResponseWriter, r *http.Request) {
 }
 func delTask(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	task, ok := tasks[id]
+	_, ok := tasks[id]
 	if !ok {
-		http.Error(w, "ID не найдено", http.StatusNotFound)
-		return
-	}
-	taskdel, err := json.Marshal(task)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "ID не найдено", http.StatusBadRequest)
 		return
 	}
 	delete(tasks, id)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(taskdel)
 }
 func main() {
 	r := chi.NewRouter()
